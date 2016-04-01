@@ -10,6 +10,18 @@
 <!-- SOCKET.IO LIBRARY -->
 <script src="https://cdn.socket.io/socket.io-1.4.5.js"></script>
 <script>
+    //*******//
+    //  IMG  //
+    //*******//
+    var Img = {};
+    Img.player = new Image();
+    Img.player.src = '/img/player.png';
+    Img.sword =  new Image();
+    Img.sword.src = '/img/sword.png';
+    Img.sword2 = new Image();
+    Img.sword2.src = '/img/sword2.png';
+
+
     var ctx = document.getElementById("ctx").getContext("2d");
     ctx.font='30px Arial';
     var socket = io();
@@ -17,8 +29,20 @@
     socket.on('newPositions', function(data){
         ctx.clearRect(0,0,500,500);
         for(var i = 0; i < data.player.length; i++){
-            ctx.fillText(data.player[i].number,data.player[i].x,data.player[i].y);
+            //ctx.fillText(data.player[i].number,data.player[i].x,data.player[i].y);
+            ctx.drawImage(Img.player, data.player[i].x, data.player[i].y);
         }
+    });
+
+    socket.on('basicAttack', function(player){
+        /*
+            Mejorar la animacion de ataque basico para que en vez de tener que cargar 2 imagenes solo se cargue una
+            y se transforme con rotar, tambien que la animacion este mas tiempo.
+         */
+        if (player.turn === 'right') ctx.drawImage(Img.sword2, player.x + 32, player.y + 16);
+        else if (player.turn === 'left') ctx.drawImage(Img.sword2, player.x -16, player.y + 16);
+        else if (player.turn === 'up') ctx.drawImage(Img.sword, player.x + 16, player.y - 16);
+        else if (player.turn === 'down') ctx.drawImage(Img.sword, player.x + 16, player.y + 32);
     });
 
     document.onkeydown = function(event){
@@ -30,7 +54,7 @@
             socket.emit('keyPress',{inputId:'left',state:true});
         else if(event.keyCode === 87) //w
             socket.emit('keyPress',{inputId:'up',state:true});
-    }
+    };
 
     document.onkeyup = function(event){
         if(event.keyCode === 68) //d
@@ -41,6 +65,10 @@
             socket.emit('keyPress',{inputId:'left',state:false});
         else if(event.keyCode === 87) //w
             socket.emit('keyPress',{inputId:'up',state:false});
+    }
+
+    document.onclick = function(event){
+        socket.emit('clickPress');
     }
 </script>
 

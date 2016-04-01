@@ -8,7 +8,7 @@ var serv = require('http').Server(app);
 app.get('/', function(req, res){
     res.sendFile(__dirname + '/client/index.html');
 });
-app.use('client', express.static(__dirname + '/client'));
+app.use(express.static(__dirname + '/client'));
 
 serv.listen(2000);
 console.log("Server started http://localhost:2000");
@@ -43,6 +43,7 @@ var Player = function(id){
     self.pressingUp = false;
     self.pressingDown = false;
     self.maxSpd = 10;
+    self.turn = 'right';
 
     var super_update = self.update;
     self.update = function(){
@@ -69,14 +70,26 @@ Player.onConnect = function(socket){
     var player = Player(socket.id);
 
     socket.on('keyPress', function(data){
-        if(data.inputId === 'left')
+        if(data.inputId === 'left') {
             player.pressingLeft = data.state;
-        else if(data.inputId === 'right')
+            player.turn = 'left';
+        }
+        else if(data.inputId === 'right') {
             player.pressingRight = data.state;
-        else if(data.inputId === 'up')
+            player.turn = 'right';
+        }
+        else if(data.inputId === 'up') {
             player.pressingUp = data.state;
-        else if(data.inputId === 'down')
+            player.turn = 'up';
+        }
+        else if(data.inputId === 'down') {
             player.pressingDown = data.state;
+            player.turn = 'down';
+        }
+    });
+
+    socket.on('clickPress', function(){
+        socket.emit('basicAttack', player);
     });
 };
 Player.onDisconnect = function(socket){
