@@ -18,31 +18,21 @@
     Img.player.src = '/img/player.png';
     Img.sword =  new Image();
     Img.sword.src = '/img/sword.png';
-    Img.sword2 = new Image();
-    Img.sword2.src = '/img/sword2.png';
-
 
     var ctx = document.getElementById("ctx").getContext("2d");
     ctx.font='30px Arial';
+    var HEIGHT = 500;
+    var WIDTH = 500;
     var socket = io();
 
-    socket.on('newPositions', function(data){
+    socket.on('draw', function(data){
         ctx.clearRect(0,0,500,500);
         for(var i = 0; i < data.player.length; i++){
-            //ctx.fillText(data.player[i].number,data.player[i].x,data.player[i].y);
             ctx.drawImage(Img.player, data.player[i].x, data.player[i].y);
+            // Ataque muy basico, necesita calcular el angulo para poner bien la espada
+            if(data.player[i].clickLeft)
+                ctx.drawImage(Img.sword, data.player[i].x + 32, data.player[i].y + 16);
         }
-    });
-
-    socket.on('basicAttack', function(player){
-        /*
-            Mejorar la animacion de ataque basico para que en vez de tener que cargar 2 imagenes solo se cargue una
-            y se transforme con rotar, tambien que la animacion este mas tiempo.
-         */
-        if (player.turn === 'right') ctx.drawImage(Img.sword2, player.x + 32, player.y + 16);
-        else if (player.turn === 'left') ctx.drawImage(Img.sword2, player.x -16, player.y + 16);
-        else if (player.turn === 'up') ctx.drawImage(Img.sword, player.x + 16, player.y - 16);
-        else if (player.turn === 'down') ctx.drawImage(Img.sword, player.x + 16, player.y + 32);
     });
 
     document.onkeydown = function(event){
@@ -65,11 +55,39 @@
             socket.emit('keyPress',{inputId:'left',state:false});
         else if(event.keyCode === 87) //w
             socket.emit('keyPress',{inputId:'up',state:false});
-    }
+    };
 
-    document.onclick = function(event){
-        socket.emit('clickPress');
-    }
+    document.onmousedown = function(mouse){
+        if(mouse.which === 1) {
+            socket.emit('mousePress',{inputId:'left', state:true});
+        }
+        else if (mouse.which === 3){
+            socket.emit('mousePress',{inputId:'right', state:true});
+        }
+    };
+    document.onmouseup = function(mouse){
+        if(mouse.which === 1) {
+            socket.emit('mousePress',{inputId:'left', state:false});
+        }
+        else if (mouse.which === 3){
+            socket.emit('mousePress',{inputId:'right', state:false});
+        }
+    };
+
+    document.oncontextmenu = function(mouse){
+        mouse.preventDefault();
+    };
+
+    //Calcular el angulo donde apunta el cursor
+    document.onmousemove = function(mouse){
+        var mouseX = mouse.clientX - document.getElementById('ctx').getBoundingClientRect().left;
+        var mouseY = mouse.clientY - document.getElementById('ctx').getBoundingClientRect().top;
+
+        mouseX -= WIDTH/2;
+        mouseY -= HEIGHT/2;
+
+        socket.emit('mouseMove', {angle: Math.atan2(mouseY,mouseX) / Math.PI * 180} );
+    };
 </script>
 
 </body>

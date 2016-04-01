@@ -11,7 +11,7 @@ app.get('/', function(req, res){
 app.use(express.static(__dirname + '/client'));
 
 serv.listen(5000);
-console.log("Server started http://localhost:2000");
+console.log("Server started http://localhost:5000");
 
 var Entity = function(){
     var self = {
@@ -38,10 +38,17 @@ var Player = function(id){
     var self = Entity();
     self.id = id;
     self.number = "" + Math.floor(10 * Math.random());
+    //**********//
+    //**KEYS****//
+    //**********//
     self.pressingRight = false;
     self.pressingLeft = false;
     self.pressingUp = false;
     self.pressingDown = false;
+    self.clickRight = false;
+    self.clickLeft = false;
+
+    self.aimAngle = 0;
     self.maxSpd = 10;
     self.turn = 'right';
 
@@ -88,8 +95,17 @@ Player.onConnect = function(socket){
         }
     });
 
-    socket.on('clickPress', function(){
-        socket.emit('basicAttack', player);
+    socket.on('mousePress', function(data){
+        if(data.inputId === 'right'){
+            player.clickRight = data.state;
+        }
+        if(data.inputId === 'left'){
+            player.clickLeft = data.state;
+        }
+    });
+
+    socket.on('mouseMove', function(data){
+        player.aimAngle = data.angle;
     });
 };
 Player.onDisconnect = function(socket){
@@ -103,7 +119,8 @@ Player.update = function(socket){
         pack.push({
             x: player.x,
             y: player.y,
-            number: player.number
+            number: player.number,
+            clickLeft: player.clickLeft
         });
     }
     return pack;
@@ -131,7 +148,7 @@ setInterval(function(){
 
     for(var i in SOCKET_LIST){
         var socket = SOCKET_LIST[i];
-        socket.emit('newPositions',pack)
+        socket.emit('draw',pack);
     }
 
 },1000/25);
